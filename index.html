@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube DL Command Generator</title>
+    <style>
+        :root {
+            --bg-pink: #ffe2e2;
+            --bg-purple: #cdb4db;
+            --glass-bg: rgba(255, 255, 255, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --text-main: #333;
+            --accent: #9b59b6;
+            --accent-hover: #8e44ad;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Roboto, Arial, sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-main);
+            /* 基础背景 */
+            background: linear-gradient(135deg, #fff5f7 0%, #fff0f5 100%);
+            position: relative;
+        }
+
+        /* 背景装饰 - 更柔和的曲线 (使用大圆弧模拟波浪) */
+        .wave-bg {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        .wave {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px); /* 增加模糊让过渡更自然 */
+            opacity: 0.8;
+        }
+
+        .wave-1 {
+            background: #e0c3fc;
+            width: 150vw;
+            height: 150vw;
+            bottom: -90vw;
+            left: -20vw;
+            animation: float 10s ease-in-out infinite alternate;
+        }
+
+        .wave-2 {
+            background: #ffdde1;
+            width: 120vw;
+            height: 120vw;
+            bottom: -60vw;
+            right: -30vw;
+            opacity: 0.6;
+            animation: float 15s ease-in-out infinite alternate-reverse;
+        }
+
+        /* 模拟中间那道柔和的分割线 */
+        .wave-3 {
+            background: linear-gradient(45deg, #dab6fc, #ffb7b2);
+            width: 180vw;
+            height: 60vh;
+            bottom: -20vh;
+            left: -40vw;
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+            transform: rotate(-5deg);
+            filter: blur(40px);
+            opacity: 0.5;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(20px) rotate(2deg); }
+        }
+
+        /* 主卡片 */
+        .container {
+            width: 680px;
+            max-width: 90%;
+            padding: 45px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            box-shadow:
+                0 20px 40px rgba(0, 0, 0, 0.05),
+                inset 0 0 0 1px rgba(255,255,255,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+            transition: transform 0.3s ease;
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 22px;
+            text-align: center;
+            color: #444;
+            margin-bottom: 5px;
+        }
+
+        /* 输入框区域 */
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 16px 24px;
+            font-size: 15px;
+            border: none;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.7);
+            box-shadow: inset 0 2px 6px rgba(166, 166, 166, 0.1);
+            outline: none;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        input[type="text"]:focus {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+
+        /* 动态标题提示 */
+        .url-hint {
+            position: absolute;
+            right: 12px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            pointer-events: none;
+            z-index: 3;
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .input-wrapper.has-content .url-hint {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .input-wrapper.has-content input {
+            padding-right: 160px;
+        }
+
+        .badge {
+            background: linear-gradient(135deg, #c471ed 0%, #f64f59 100%);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(196, 113, 237, 0.3);
+            letter-spacing: 0.5px;
+        }
+
+        /* 选项区域 */
+        .options {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .checkbox-label {
+            cursor: pointer;
+            padding: 12px 20px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 14px;
+            transition: all 0.2s ease;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            border: 1px solid transparent;
+        }
+
+        .checkbox-label:hover {
+            background: rgba(255,255,255,0.8);
+            transform: translateY(-1px);
+        }
+
+        .checkbox-label input {
+            display: none;
+        }
+
+        .checkbox-label.checked {
+            background: #fff;
+            color: var(--accent);
+            border-color: rgba(155, 89, 182, 0.3);
+            box-shadow: 0 4px 15px rgba(155, 89, 182, 0.15);
+        }
+
+        .checkbox-label.checked span::before {
+            content: "✓ ";
+            font-weight: bold;
+        }
+
+        /* 路径提示 */
+        .path-info {
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .path-code {
+            font-family: "Menlo", monospace;
+            background: rgba(255,255,255,0.6);
+            padding: 3px 8px;
+            border-radius: 6px;
+            color: #555;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* 结果区域 */
+        .result-area {
+            margin-top: 5px;
+            position: relative;
+        }
+
+        textarea {
+            width: 100%;
+            height: 130px;
+            padding: 16px;
+            /* 底部留出空间给按钮 */
+            padding-bottom: 45px;
+            border-radius: 18px;
+            border: 1px solid rgba(0,0,0,0.1);
+            background: #212121;
+            color: #a9ff68;
+            font-family: "SF Mono", "Menlo", "Consolas", monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s ease;
+        }
+
+        textarea.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 复制按钮 - 右下角 */
+        .copy-btn {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.9);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+            backdrop-filter: blur(4px);
+        }
+
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.3);
+            color: #fff;
+        }
+
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="wave-bg">
+        <div class="wave wave-1"></div>
+        <div class="wave wave-2"></div>
+        <div class="wave wave-3"></div>
+    </div>
+
+    <div class="container">
+        <h1>YouTube DL 指令生成器</h1>
+
+        <div class="input-wrapper" id="inputWrapper">
+            <input type="text" id="videoUrl" placeholder="粘贴 YouTube 视频/列表链接..." autocomplete="off">
+            <div class="url-hint">
+                <span class="badge" id="urlBadge">等待输入...</span>
+            </div>
+        </div>
+
+        <div class="options">
+            <label class="checkbox-label" id="lbl-video" onclick="toggleCheck('video')">
+                <input type="checkbox" id="chk-video" checked onchange="generate()">
+                <span>🎬 视频 (MKV)</span>
+            </label>
+            <label class="checkbox-label" id="lbl-audio" onclick="toggleCheck('audio')">
+                <input type="checkbox" id="chk-audio" onchange="generate()">
+                <span>🎵 音频 (MP3)</span>
+            </label>
+            <label class="checkbox-label" id="lbl-sub" onclick="toggleCheck('sub')">
+                <input type="checkbox" id="chk-sub" onchange="generate()">
+                <span>📝 字幕 (SRT)</span>
+            </label>
+        </div>
+
+        <div class="path-info">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.66V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5.34"></path><polygon points="18 2 22 6 12 16 8 16 8 12 18 2"></polygon></svg>
+            <span>下载路径:</span>
+            <span class="path-code">~/Movies/YouTube DL/</span>
+        </div>
+
+        <div class="result-area">
+            <textarea id="output" readonly placeholder="请输入链接开始生成..."></textarea>
+            <button class="copy-btn" onclick="copyText()">复制命令</button>
+        </div>
+    </div>
+
+    <script>
+        const DOWNLOAD_PATH = '~/Movies/YouTube\\ DL/';
+        const urlInput = document.getElementById('videoUrl');
+        const wrapper = document.getElementById('inputWrapper');
+        const badge = document.getElementById('urlBadge');
+
+        // 初始化：页面加载时，手动触发一次 visual update 确保视频选项高亮
+        window.onload = function() {
+            toggleCheck('video', true); // true 表示不改变勾选状态，仅刷新UI
+            toggleCheck('audio', true);
+            toggleCheck('sub', true);
+        };
+
+        urlInput.addEventListener('input', (e) => {
+            handleInput(e.target.value);
+        });
+
+        function handleInput(val) {
+            if (val.trim().length > 0) {
+                wrapper.classList.add('has-content');
+                if (val.includes('list=')) {
+                    badge.textContent = '列表 📚';
+                } else if (val.includes('youtu')) {
+                    badge.textContent = '视频 🎬';
+                } else {
+                    badge.textContent = '链接 🔗';
+                }
+            } else {
+                wrapper.classList.remove('has-content');
+            }
+            generate();
+        }
+
+        function toggleCheck(type, onlyVisual = false) {
+            const chk = document.getElementById('chk-' + type);
+            const lbl = document.getElementById('lbl-' + type);
+
+            // 如果不是仅刷新视觉，而是点击触发，这里不用做额外逻辑，因为input在label内会自动切换
+            // 我们只需要延时检测状态
+            setTimeout(() => {
+                if (chk.checked) {
+                    lbl.classList.add('checked');
+                } else {
+                    lbl.classList.remove('checked');
+                }
+            }, 0);
+        }
+
+        function generate() {
+            const url = urlInput.value.trim();
+            const isVideo = document.getElementById('chk-video').checked;
+            const isAudio = document.getElementById('chk-audio').checked;
+            const isSub = document.getElementById('chk-sub').checked;
+            const outputArea = document.getElementById('output');
+
+            if (!url) {
+                outputArea.classList.remove('visible');
+                return;
+            }
+
+            let commands = [];
+            const baseCmd = `yt-dlp "${url}" -P "${DOWNLOAD_PATH}"`;
+
+            if (isVideo) {
+                commands.push(`${baseCmd} --format "bv+ba/b" --embed-subs --sub-langs "en.*,zh.*" --merge-output-format mkv`);
+            }
+
+            if (isAudio) {
+                commands.push(`${baseCmd} -x --audio-format mp3`);
+            }
+
+            if (isSub) {
+                commands.push(`${baseCmd} --write-sub --sub-langs "en.*,zh.*" --convert-subs srt --skip-download`);
+            }
+
+            if (commands.length > 0) {
+                outputArea.value = commands.join(' && ');
+                outputArea.classList.add('visible');
+            } else {
+                outputArea.classList.remove('visible');
+            }
+        }
+
+        function copyText() {
+            const copyText = document.getElementById("output");
+            if (!copyText.value) return;
+
+            copyText.select();
+            document.execCommand("copy");
+
+            const btn = document.querySelector('.copy-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "✓ 已复制";
+            btn.style.background = "rgba(169, 255, 104, 0.3)";
+            btn.style.color = "#a9ff68";
+
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = "";
+                btn.style.color = "";
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
