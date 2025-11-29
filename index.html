@@ -187,11 +187,21 @@
             display: flex;
             gap: 15px;
             align-items: center;
-            margin-top: 0;
+
+            /* --- 修改开始 --- */
+            /* 初始状态：隐藏 */
             height: 0;
             opacity: 0;
             overflow: hidden;
             border: 1px solid transparent;
+
+            /* 关键修改：设置 marginTop 为 0，marginBottom 为 -24px */
+            /* -24px 是为了抵消父容器 container 的 gap: 24px 产生的多余间距 */
+            margin-top: 0;
+            margin-bottom: -24px;
+
+            /* --- 修改结束 --- */
+
             transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             transform: translateY(-10px);
         }
@@ -199,11 +209,17 @@
         .preview-card.visible {
             opacity: 1;
             height: auto;
+
+            /* --- 修改开始 --- */
+            /* 显示状态：恢复正常的间距 */
+            /* 这里设置上下各 5px，加上父容器原本的 gap，视觉效果会很舒服 */
             margin-top: 5px;
+            margin-bottom: 5px;
+            /* --- 修改结束 --- */
+
             padding: 12px;
             border-color: rgba(255, 255, 255, 0.5);
             transform: translateY(0);
-            margin-bottom: 5px;
         }
 
         .preview-thumb {
