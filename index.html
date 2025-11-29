@@ -175,6 +175,61 @@
             letter-spacing: 0.5px;
         }
 
+        /* --- 新增：预览卡片样式 --- */
+        .preview-card {
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-top: -10px; /* 紧贴输入框下方 */
+            margin-bottom: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            height: 0;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: translateY(-10px);
+        }
+
+        .preview-card.visible {
+            opacity: 1;
+            height: auto;
+            margin-top: 5px;
+            transform: translateY(0);
+            padding: 12px; /* 恢复 padding */
+        }
+
+        .preview-thumb {
+            width: 120px;
+            height: 68px;
+            border-radius: 10px;
+            object-fit: cover;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .preview-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .preview-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .preview-author {
+            font-size: 12px;
+            color: #666;
+        }
+        /* ----------------------- */
+
         /* 选项区域 */
         .options {
             display: flex;
@@ -315,6 +370,14 @@
             </div>
         </div>
 
+        <div class="preview-card" id="previewCard">
+            <img src="" alt="Thumbnail" class="preview-thumb" id="previewThumb">
+            <div class="preview-info">
+                <div class="preview-title" id="previewTitle">加载中...</div>
+                <div class="preview-author" id="previewAuthor"></div>
+            </div>
+        </div>
+
         <div class="options">
             <label class="checkbox-label" id="lbl-video" onclick="toggleCheck('video')">
                 <input type="checkbox" id="chk-video" checked onchange="generate()">
@@ -343,10 +406,12 @@
     </div>
 
     <script>
+        // 修改了路径：移除了转义符，因为在外层使用了双引号
         const DOWNLOAD_PATH = '~/Movies/YouTube DL/';
         const urlInput = document.getElementById('videoUrl');
         const wrapper = document.getElementById('inputWrapper');
         const badge = document.getElementById('urlBadge');
+        let debounceTimer; // 预览请求防抖定时器
 
         // 初始化：页面加载时，手动触发一次 visual update 确保视频选项高亮
         window.onload = function() {
@@ -369,10 +434,62 @@
                 } else {
                     badge.textContent = '链接 🔗';
                 }
+
+                // --- 调用预览逻辑 (带防抖) ---
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    fetchVideoInfo(val.trim());
+                }, 500); // 停止输入 500ms 后再请求
+
             } else {
                 wrapper.classList.remove('has-content');
+                hidePreview(); // 清空输入时隐藏预览
             }
             generate();
+        }
+
+        // --- 新增：获取视频信息函数 ---
+        async function fetchVideoInfo(url) {
+            // 简单校验
+            if (!url.startsWith('http')) return;
+
+            // 调用 Vercel Serverless Function /api/info
+            try {
+                const res = await fetch(`/api/info?url=${encodeURIComponent(url)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    showPreview(data);
+                } else {
+                    hidePreview();
+                }
+            } catch (e) {
+                console.error("Fetch info failed", e);
+                // 失败静默处理，不打扰用户
+                hidePreview();
+            }
+        }
+
+        // --- 新增：显示预览 UI ---
+        function showPreview(data) {
+            const card = document.getElementById('previewCard');
+            // 安全设置文本内容
+            document.getElementById('previewTitle').textContent = data.title;
+            document.getElementById('previewAuthor').textContent = data.author_name;
+            document.getElementById('previewThumb').src = data.thumbnail_url;
+
+            card.classList.add('visible');
+        }
+
+        // --- 新增：隐藏预览 UI ---
+        function hidePreview() {
+            const card = document.getElementById('previewCard');
+            card.classList.remove('visible');
+            // 动画结束后清理图片，避免下次显示闪烁旧图
+            setTimeout(() => {
+                if(!card.classList.contains('visible')) {
+                    document.getElementById('previewThumb').src = '';
+                }
+            }, 400);
         }
 
         function toggleCheck(type, onlyVisual = false) {
@@ -427,29 +544,23 @@
 
         function copyText() {
             const output = document.getElementById("output");
-            // 如果没有内容则不执行
             if (!output.value) return;
 
-            // --- 修改开始：使用临时元素复制，避免视觉上的全选 ---
+            // --- 修改：使用隐藏元素复制，避免全选视觉 ---
             const tempInput = document.createElement("textarea");
             tempInput.value = output.value;
-            // 将临时元素移出可视区域
             tempInput.style.position = "absolute";
             tempInput.style.left = "-9999px";
             tempInput.style.top = "0";
             document.body.appendChild(tempInput);
 
-            // 选中并复制临时元素的内容
             tempInput.select();
             document.execCommand("copy");
 
-            // 移除临时元素
             document.body.removeChild(tempInput);
-            // --- 修改结束 ---
+            // ---------------------------------------
 
-            // 按钮提示反馈逻辑（保持原有风格，微调防止文字闪烁问题）
             const btn = document.querySelector('.copy-btn');
-            // 防止快速点击时将“已复制”记录为原始文本
             if (btn.innerText.includes("✓")) return;
 
             const originalText = btn.innerText;
