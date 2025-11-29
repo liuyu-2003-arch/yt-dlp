@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube DL Command Generator</title>
+    <meta name="referrer" content="no-referrer">
+    <title>YouTube/Bilibili DL Command Generator</title>
     <style>
         :root {
             --bg-pink: #ffe2e2;
@@ -30,12 +31,11 @@
             justify-content: center;
             align-items: center;
             color: var(--text-main);
-            /* 基础背景 */
             background: linear-gradient(135deg, #fff5f7 0%, #fff0f5 100%);
             position: relative;
         }
 
-        /* 背景装饰 - 更柔和的曲线 (使用大圆弧模拟波浪) */
+        /* 动态背景 */
         .wave-bg {
             position: absolute;
             left: 0;
@@ -48,7 +48,7 @@
         .wave {
             position: absolute;
             border-radius: 50%;
-            filter: blur(60px); /* 增加模糊让过渡更自然 */
+            filter: blur(60px);
             opacity: 0.8;
         }
 
@@ -71,7 +71,6 @@
             animation: float 15s ease-in-out infinite alternate-reverse;
         }
 
-        /* 模拟中间那道柔和的分割线 */
         .wave-3 {
             background: linear-gradient(45deg, #dab6fc, #ffb7b2);
             width: 180vw;
@@ -89,7 +88,7 @@
             100% { transform: translateY(20px) rotate(2deg); }
         }
 
-        /* 主卡片 */
+        /* 主容器 */
         .container {
             width: 680px;
             max-width: 90%;
@@ -116,7 +115,7 @@
             margin-bottom: 5px;
         }
 
-        /* 输入框区域 */
+        /* 输入框 */
         .input-wrapper {
             position: relative;
             display: flex;
@@ -141,7 +140,6 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.08);
         }
 
-        /* 动态标题提示 */
         .url-hint {
             position: absolute;
             right: 12px;
@@ -175,30 +173,34 @@
             letter-spacing: 0.5px;
         }
 
-        /* --- 新增：预览卡片样式 --- */
+        /* 预览卡片 */
         .preview-card {
             background: rgba(255, 255, 255, 0.4);
             border-radius: 16px;
-            padding: 12px;
+            padding: 0; /* 默认无内边距 */
             display: flex;
             gap: 15px;
             align-items: center;
-            margin-top: -10px; /* 紧贴输入框下方 */
-            margin-bottom: 5px;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            opacity: 0;
+
+            /* 初始状态：完全隐藏 */
+            margin-top: 0;
             height: 0;
+            opacity: 0;
             overflow: hidden;
+            border: 1px solid transparent; /* 隐藏边框 */
+
             transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             transform: translateY(-10px);
         }
 
         .preview-card.visible {
             opacity: 1;
-            height: auto;
+            height: auto; /* 自动撑开 */
             margin-top: 5px;
+            padding: 12px; /* 展开时添加内边距 */
+            border-color: rgba(255, 255, 255, 0.5);
             transform: translateY(0);
-            padding: 12px; /* 恢复 padding */
+            margin-bottom: 5px;
         }
 
         .preview-thumb {
@@ -228,9 +230,8 @@
             font-size: 12px;
             color: #666;
         }
-        /* ----------------------- */
 
-        /* 选项区域 */
+        /* 选项 */
         .options {
             display: flex;
             gap: 15px;
@@ -273,7 +274,7 @@
             font-weight: bold;
         }
 
-        /* 路径提示 */
+        /* 路径信息 */
         .path-info {
             font-size: 12px;
             color: #777;
@@ -292,17 +293,33 @@
             border: 1px solid rgba(0,0,0,0.05);
         }
 
-        /* 结果区域 */
+        /* --- 结果区域 (重点修改) --- */
         .result-area {
-            margin-top: 5px;
             position: relative;
+
+            /* 初始状态：隐藏，不占位 */
+            margin-top: 0;
+            height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transform: translateY(20px);
+
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* 激活状态：展开 */
+        .result-area.visible {
+            margin-top: 20px; /* 展开后的间距 */
+            height: 130px;    /* 文本框的高度 */
+            opacity: 1;
+            transform: translateY(0);
+            overflow: visible; /* 允许按钮阴影等溢出 */
         }
 
         textarea {
             width: 100%;
             height: 130px;
             padding: 16px;
-            /* 底部留出空间给按钮 */
             padding-bottom: 45px;
             border-radius: 18px;
             border: 1px solid rgba(0,0,0,0.1);
@@ -314,17 +331,8 @@
             resize: none;
             outline: none;
             box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.4s ease;
         }
 
-        textarea.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* 复制按钮 - 右下角 */
         .copy-btn {
             position: absolute;
             bottom: 12px;
@@ -339,6 +347,7 @@
             font-weight: 500;
             transition: all 0.2s;
             backdrop-filter: blur(4px);
+            z-index: 10;
         }
 
         .copy-btn:hover {
@@ -361,10 +370,10 @@
     </div>
 
     <div class="container">
-        <h1>YouTube DL 指令生成器</h1>
+        <h1>DL 指令生成器</h1>
 
         <div class="input-wrapper" id="inputWrapper">
-            <input type="text" id="videoUrl" placeholder="粘贴 YouTube 视频/列表链接..." autocomplete="off">
+            <input type="text" id="videoUrl" placeholder="粘贴 YouTube / Bilibili 链接..." autocomplete="off">
             <div class="url-hint">
                 <span class="badge" id="urlBadge">等待输入...</span>
             </div>
@@ -399,23 +408,23 @@
             <span class="path-code">~/Movies/YouTube DL/</span>
         </div>
 
-        <div class="result-area">
+        <div class="result-area" id="resultArea">
             <textarea id="output" readonly placeholder="请输入链接开始生成..."></textarea>
             <button class="copy-btn" onclick="copyText()">复制命令</button>
         </div>
     </div>
 
     <script>
-        // 修改了路径：移除了转义符，因为在外层使用了双引号
         const DOWNLOAD_PATH = '~/Movies/YouTube DL/';
         const urlInput = document.getElementById('videoUrl');
         const wrapper = document.getElementById('inputWrapper');
         const badge = document.getElementById('urlBadge');
-        let debounceTimer; // 预览请求防抖定时器
+        // 获取 resultArea 容器
+        const resultArea = document.getElementById('resultArea');
+        let debounceTimer;
 
-        // 初始化：页面加载时，手动触发一次 visual update 确保视频选项高亮
         window.onload = function() {
-            toggleCheck('video', true); // true 表示不改变勾选状态，仅刷新UI
+            toggleCheck('video', true);
             toggleCheck('audio', true);
             toggleCheck('sub', true);
         };
@@ -427,34 +436,36 @@
         function handleInput(val) {
             if (val.trim().length > 0) {
                 wrapper.classList.add('has-content');
-                if (val.includes('list=')) {
+
+                // 简单的关键词判断
+                if (val.includes('list=') || val.includes('collection')) {
                     badge.textContent = '列表 📚';
+                } else if (val.includes('bilibili')) {
+                    badge.textContent = 'Bilibili 📺';
                 } else if (val.includes('youtu')) {
-                    badge.textContent = '视频 🎬';
+                    badge.textContent = 'YouTube 🎬';
                 } else {
                     badge.textContent = '链接 🔗';
                 }
 
-                // --- 调用预览逻辑 (带防抖) ---
+                // 防抖调用预览
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(() => {
                     fetchVideoInfo(val.trim());
-                }, 500); // 停止输入 500ms 后再请求
+                }, 500);
 
             } else {
                 wrapper.classList.remove('has-content');
-                hidePreview(); // 清空输入时隐藏预览
+                hidePreview();
             }
             generate();
         }
 
-        // --- 新增：获取视频信息函数 ---
         async function fetchVideoInfo(url) {
-            // 简单校验
             if (!url.startsWith('http')) return;
 
-            // 调用 Vercel Serverless Function /api/info
             try {
+                // 这里的 /api/info 需要配合后端的更新才能支持 Bilibili
                 const res = await fetch(`/api/info?url=${encodeURIComponent(url)}`);
                 if (res.ok) {
                     const data = await res.json();
@@ -464,27 +475,21 @@
                 }
             } catch (e) {
                 console.error("Fetch info failed", e);
-                // 失败静默处理，不打扰用户
                 hidePreview();
             }
         }
 
-        // --- 新增：显示预览 UI ---
         function showPreview(data) {
             const card = document.getElementById('previewCard');
-            // 安全设置文本内容
             document.getElementById('previewTitle').textContent = data.title;
             document.getElementById('previewAuthor').textContent = data.author_name;
             document.getElementById('previewThumb').src = data.thumbnail_url;
-
             card.classList.add('visible');
         }
 
-        // --- 新增：隐藏预览 UI ---
         function hidePreview() {
             const card = document.getElementById('previewCard');
             card.classList.remove('visible');
-            // 动画结束后清理图片，避免下次显示闪烁旧图
             setTimeout(() => {
                 if(!card.classList.contains('visible')) {
                     document.getElementById('previewThumb').src = '';
@@ -496,8 +501,6 @@
             const chk = document.getElementById('chk-' + type);
             const lbl = document.getElementById('lbl-' + type);
 
-            // 如果不是仅刷新视觉，而是点击触发，这里不用做额外逻辑，因为input在label内会自动切换
-            // 我们只需要延时检测状态
             setTimeout(() => {
                 if (chk.checked) {
                     lbl.classList.add('checked');
@@ -514,8 +517,9 @@
             const isSub = document.getElementById('chk-sub').checked;
             const outputArea = document.getElementById('output');
 
+            // 如果没有 URL，移除 resultArea 的 visible 类，整个区域折叠隐藏
             if (!url) {
-                outputArea.classList.remove('visible');
+                resultArea.classList.remove('visible');
                 return;
             }
 
@@ -536,9 +540,10 @@
 
             if (commands.length > 0) {
                 outputArea.value = commands.join(' && ');
-                outputArea.classList.add('visible');
+                // 有内容时，展开区域
+                resultArea.classList.add('visible');
             } else {
-                outputArea.classList.remove('visible');
+                resultArea.classList.remove('visible');
             }
         }
 
@@ -546,7 +551,6 @@
             const output = document.getElementById("output");
             if (!output.value) return;
 
-            // --- 修改：使用隐藏元素复制，避免全选视觉 ---
             const tempInput = document.createElement("textarea");
             tempInput.value = output.value;
             tempInput.style.position = "absolute";
@@ -558,7 +562,6 @@
             document.execCommand("copy");
 
             document.body.removeChild(tempInput);
-            // ---------------------------------------
 
             const btn = document.querySelector('.copy-btn');
             if (btn.innerText.includes("✓")) return;
