@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
+
+    <link rel="icon" href="favicon.ico">
+
     <title>YouTube/Bilibili DL Command Generator</title>
     <style>
         :root {
@@ -92,7 +95,7 @@
         .container {
             width: 680px;
             max-width: 90%;
-            padding: 45px;
+            padding: 40px 45px;
             background: var(--glass-bg);
             backdrop-filter: blur(40px);
             -webkit-backdrop-filter: blur(40px);
@@ -103,16 +106,40 @@
                 inset 0 0 0 1px rgba(255,255,255,0.5);
             display: flex;
             flex-direction: column;
-            gap: 28px;
+            gap: 24px;
             transition: transform 0.3s ease;
+            position: relative;
+        }
+
+        /* Logo 区域样式更新 */
+        .logo-wrapper {
+            text-align: center;
+            margin-bottom: -10px;
+        }
+
+        .app-logo {
+            width: 64px; /* 设置 Logo 容器大小 */
+            height: 64px;
+            margin: 0 auto 10px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .app-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* 保持图片比例 */
+            /* 给图片加一点柔和的投影，让它在浅色背景上更立体 */
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
         }
 
         h1 {
-            font-weight: 600;
-            font-size: 22px;
+            font-weight: 700;
+            font-size: 24px;
             text-align: center;
             color: #444;
-            margin-bottom: 5px;
+            letter-spacing: -0.5px;
         }
 
         /* 输入框 */
@@ -120,6 +147,7 @@
             position: relative;
             display: flex;
             align-items: center;
+            margin-top: 10px;
         }
 
         input[type="text"] {
@@ -177,27 +205,24 @@
         .preview-card {
             background: rgba(255, 255, 255, 0.4);
             border-radius: 16px;
-            padding: 0; /* 默认无内边距 */
+            padding: 0;
             display: flex;
             gap: 15px;
             align-items: center;
-
-            /* 初始状态：完全隐藏 */
             margin-top: 0;
             height: 0;
             opacity: 0;
             overflow: hidden;
-            border: 1px solid transparent; /* 隐藏边框 */
-
+            border: 1px solid transparent;
             transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             transform: translateY(-10px);
         }
 
         .preview-card.visible {
             opacity: 1;
-            height: auto; /* 自动撑开 */
+            height: auto;
             margin-top: 5px;
-            padding: 12px; /* 展开时添加内边距 */
+            padding: 12px;
             border-color: rgba(255, 255, 255, 0.5);
             transform: translateY(0);
             margin-bottom: 5px;
@@ -274,46 +299,66 @@
             font-weight: bold;
         }
 
-        /* 路径信息 */
+        /* 路径信息 (可编辑) */
         .path-info {
-            font-size: 12px;
+            font-size: 13px;
             color: #777;
             text-align: center;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-        }
-        .path-code {
-            font-family: "Menlo", monospace;
-            background: rgba(255,255,255,0.6);
-            padding: 3px 8px;
-            border-radius: 6px;
-            color: #555;
-            border: 1px solid rgba(0,0,0,0.05);
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            border-radius: 12px;
+            align-self: center;
         }
 
-        /* --- 结果区域 (重点修改) --- */
+        .path-label-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .path-input {
+            font-family: "Menlo", monospace;
+            background: transparent;
+            border: none;
+            border-bottom: 1px dashed rgba(0,0,0,0.2);
+            color: #555;
+            padding: 2px 4px;
+            width: 220px;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .path-input:focus {
+            border-bottom-color: var(--accent);
+            color: #333;
+            background: rgba(255,255,255,0.4);
+            border-radius: 4px;
+            border-bottom: none;
+        }
+
+        /* 结果区域 */
         .result-area {
             position: relative;
-
-            /* 初始状态：隐藏，不占位 */
             margin-top: 0;
             height: 0;
             opacity: 0;
             overflow: hidden;
             transform: translateY(20px);
-
             transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        /* 激活状态：展开 */
         .result-area.visible {
-            margin-top: 20px; /* 展开后的间距 */
-            height: 130px;    /* 文本框的高度 */
+            margin-top: 10px;
+            height: 130px;
             opacity: 1;
             transform: translateY(0);
-            overflow: visible; /* 允许按钮阴影等溢出 */
+            overflow: visible;
         }
 
         textarea {
@@ -370,7 +415,12 @@
     </div>
 
     <div class="container">
-        <h1>DL 指令生成器</h1>
+        <div class="logo-wrapper">
+            <div class="app-logo">
+                <img src="logo.png" alt="App Logo" onerror="this.style.display='none'">
+            </div>
+            <h1>DL 指令生成器</h1>
+        </div>
 
         <div class="input-wrapper" id="inputWrapper">
             <input type="text" id="videoUrl" placeholder="粘贴 YouTube / Bilibili 链接..." autocomplete="off">
@@ -403,9 +453,11 @@
         </div>
 
         <div class="path-info">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.66V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5.34"></path><polygon points="18 2 22 6 12 16 8 16 8 12 18 2"></polygon></svg>
-            <span>下载路径:</span>
-            <span class="path-code">~/Movies/YouTube DL/</span>
+            <div class="path-label-group">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.66V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5.34"></path><polygon points="18 2 22 6 12 16 8 16 8 12 18 2"></polygon></svg>
+                <span>下载路径:</span>
+            </div>
+            <input type="text" id="dlPath" class="path-input" value="~/Movies/YouTube DL/" oninput="generate()">
         </div>
 
         <div class="result-area" id="resultArea">
@@ -415,11 +467,9 @@
     </div>
 
     <script>
-        const DOWNLOAD_PATH = '~/Movies/YouTube DL/';
         const urlInput = document.getElementById('videoUrl');
         const wrapper = document.getElementById('inputWrapper');
         const badge = document.getElementById('urlBadge');
-        // 获取 resultArea 容器
         const resultArea = document.getElementById('resultArea');
         let debounceTimer;
 
@@ -437,7 +487,6 @@
             if (val.trim().length > 0) {
                 wrapper.classList.add('has-content');
 
-                // 简单的关键词判断
                 if (val.includes('list=') || val.includes('collection')) {
                     badge.textContent = '列表 📚';
                 } else if (val.includes('bilibili')) {
@@ -448,7 +497,6 @@
                     badge.textContent = '链接 🔗';
                 }
 
-                // 防抖调用预览
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(() => {
                     fetchVideoInfo(val.trim());
@@ -465,7 +513,6 @@
             if (!url.startsWith('http')) return;
 
             try {
-                // 这里的 /api/info 需要配合后端的更新才能支持 Bilibili
                 const res = await fetch(`/api/info?url=${encodeURIComponent(url)}`);
                 if (res.ok) {
                     const data = await res.json();
@@ -517,14 +564,18 @@
             const isSub = document.getElementById('chk-sub').checked;
             const outputArea = document.getElementById('output');
 
-            // 如果没有 URL，移除 resultArea 的 visible 类，整个区域折叠隐藏
+            // 动态获取当前的下载路径输入值
+            let currentPath = document.getElementById('dlPath').value.trim();
+            // 如果用户清空了输入框，给一个默认值防止命令出错
+            if (!currentPath) currentPath = '.';
+
             if (!url) {
                 resultArea.classList.remove('visible');
                 return;
             }
 
             let commands = [];
-            const baseCmd = `yt-dlp "${url}" -P "${DOWNLOAD_PATH}"`;
+            const baseCmd = `yt-dlp "${url}" -P "${currentPath}"`;
 
             if (isVideo) {
                 commands.push(`${baseCmd} --format "bv+ba/b" --embed-subs --sub-langs "en.*,zh.*" --merge-output-format mkv`);
@@ -540,7 +591,6 @@
 
             if (commands.length > 0) {
                 outputArea.value = commands.join(' && ');
-                // 有内容时，展开区域
                 resultArea.classList.add('visible');
             } else {
                 resultArea.classList.remove('visible');
