@@ -128,7 +128,6 @@
             margin-top: 5px;
         }
 
-        /* 仅针对主输入框（视频链接）应用此样式 */
         #videoUrl {
             width: 100%;
             padding: 16px 24px;
@@ -278,55 +277,50 @@
             font-weight: bold;
         }
 
-        /* 路径信息 (修改为全宽) */
+        /* 路径信息 (修改：无图标、无虚线、文字在右、字号统一) */
         .path-info {
-            font-size: 13px;
+            font-size: 14px; /* 调整为 14px，与选项一致 */
             color: #777;
             text-align: left;
             display: flex;
             align-items: center;
-            justify-content: flex-start; /* 左对齐 */
+            justify-content: flex-start;
             gap: 10px;
             background: rgba(255, 255, 255, 0.3);
-            padding: 12px 20px; /* 增加一点内边距 */
-            border-radius: 16px; /* 圆角加大 */
-
-            /* 关键修改：宽度占满 */
+            padding: 12px 20px;
+            border-radius: 16px;
             width: 100%;
-            /* 移除 align-self: center，默认拉伸 */
         }
 
-        .path-label-group {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-shrink: 0;
-            color: #555;
+        .path-label {
+            color: #666;
             font-weight: 500;
+            white-space: nowrap; /* 防止文字换行 */
         }
 
-        /* 路径输入框 (占据剩余空间) */
         .path-input {
-            font-family: "Menlo", monospace;
+            /* 移除等宽字体，使用继承字体，使风格统一 */
+            font-family: inherit;
             background: transparent;
-            border: none;
-            /* 改为全宽下划线更合适，或者保持虚线 */
-            border-bottom: 1px dashed rgba(0,0,0,0.2);
+            border: none; /* 去掉虚线边框 */
             color: #444;
             padding: 4px 0;
 
-            /* 关键修改：自动填充剩余宽度 */
+            /* 自动填充剩余空间 */
             flex: 1;
             width: auto;
 
-            font-size: 13px;
+            font-size: 14px; /* 字号统一 */
             outline: none;
-            transition: all 0.2s;
         }
 
+        /* 输入框获得焦点时的微弱提示，防止完全找不到输入位置 */
         .path-input:focus {
-            border-bottom-color: var(--accent);
             color: #222;
+        }
+
+        .path-input::placeholder {
+            color: #aaa;
         }
 
         /* 结果区域 */
@@ -435,11 +429,9 @@
         </div>
 
         <div class="path-info">
-            <div class="path-label-group">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.66V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5.34"></path><polygon points="18 2 22 6 12 16 8 16 8 12 18 2"></polygon></svg>
-                <span>下载路径:</span>
-            </div>
             <input type="text" id="dlPath" class="path-input" value="~/Movies/YouTube DL/" oninput="generate()">
+
+            <span class="path-label">下载路径</span>
         </div>
 
         <div class="result-area" id="resultArea">
