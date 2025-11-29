@@ -120,7 +120,7 @@
             margin-bottom: 5px;
         }
 
-        /* 输入框 */
+        /* 输入框 (通用样式) */
         .input-wrapper {
             position: relative;
             display: flex;
@@ -128,7 +128,8 @@
             margin-top: 5px;
         }
 
-        input[type="text"] {
+        /* 仅针对主输入框（视频链接）应用此样式 */
+        #videoUrl {
             width: 100%;
             padding: 16px 24px;
             font-size: 15px;
@@ -141,7 +142,7 @@
             z-index: 2;
         }
 
-        input[type="text"]:focus {
+        #videoUrl:focus {
             background: rgba(255, 255, 255, 0.95);
             box-shadow: 0 8px 20px rgba(0,0,0,0.08);
         }
@@ -164,7 +165,7 @@
             transform: translateX(0);
         }
 
-        .input-wrapper.has-content input {
+        .input-wrapper.has-content #videoUrl {
             padding-right: 160px;
         }
 
@@ -277,19 +278,22 @@
             font-weight: bold;
         }
 
-        /* 路径信息 (可编辑) */
+        /* 路径信息 (修改为全宽) */
         .path-info {
             font-size: 13px;
             color: #777;
-            text-align: center;
+            text-align: left;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start; /* 左对齐 */
             gap: 10px;
             background: rgba(255, 255, 255, 0.3);
-            padding: 8px 16px;
-            border-radius: 12px;
-            align-self: center;
+            padding: 12px 20px; /* 增加一点内边距 */
+            border-radius: 16px; /* 圆角加大 */
+
+            /* 关键修改：宽度占满 */
+            width: 100%;
+            /* 移除 align-self: center，默认拉伸 */
         }
 
         .path-label-group {
@@ -297,16 +301,24 @@
             align-items: center;
             gap: 6px;
             flex-shrink: 0;
+            color: #555;
+            font-weight: 500;
         }
 
+        /* 路径输入框 (占据剩余空间) */
         .path-input {
             font-family: "Menlo", monospace;
             background: transparent;
             border: none;
+            /* 改为全宽下划线更合适，或者保持虚线 */
             border-bottom: 1px dashed rgba(0,0,0,0.2);
-            color: #555;
-            padding: 2px 4px;
-            width: 220px;
+            color: #444;
+            padding: 4px 0;
+
+            /* 关键修改：自动填充剩余宽度 */
+            flex: 1;
+            width: auto;
+
             font-size: 13px;
             outline: none;
             transition: all 0.2s;
@@ -314,10 +326,7 @@
 
         .path-input:focus {
             border-bottom-color: var(--accent);
-            color: #333;
-            background: rgba(255,255,255,0.4);
-            border-radius: 4px;
-            border-bottom: none;
+            color: #222;
         }
 
         /* 结果区域 */
