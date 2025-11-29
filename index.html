@@ -7,7 +7,7 @@
 
     <link rel="icon" href="favicon.ico">
 
-    <title>YouTube/Bilibili DL Command Generator</title>
+    <title>yt-dlp Command Generator</title>
     <style>
         :root {
             --bg-pink: #ffe2e2;
@@ -111,35 +111,13 @@
             position: relative;
         }
 
-        /* Logo 区域样式更新 */
-        .logo-wrapper {
-            text-align: center;
-            margin-bottom: -10px;
-        }
-
-        .app-logo {
-            width: 64px; /* 设置 Logo 容器大小 */
-            height: 64px;
-            margin: 0 auto 10px auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .app-logo img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain; /* 保持图片比例 */
-            /* 给图片加一点柔和的投影，让它在浅色背景上更立体 */
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
-        }
-
         h1 {
             font-weight: 700;
             font-size: 24px;
             text-align: center;
             color: #444;
             letter-spacing: -0.5px;
+            margin-bottom: 5px;
         }
 
         /* 输入框 */
@@ -147,7 +125,7 @@
             position: relative;
             display: flex;
             align-items: center;
-            margin-top: 10px;
+            margin-top: 5px;
         }
 
         input[type="text"] {
@@ -415,12 +393,7 @@
     </div>
 
     <div class="container">
-        <div class="logo-wrapper">
-            <div class="app-logo">
-                <img src="logo.png" alt="App Logo" onerror="this.style.display='none'">
-            </div>
-            <h1>DL 指令生成器</h1>
-        </div>
+        <h1>yt-dlp 指令生成器</h1>
 
         <div class="input-wrapper" id="inputWrapper">
             <input type="text" id="videoUrl" placeholder="粘贴 YouTube / Bilibili 链接..." autocomplete="off">
@@ -564,9 +537,7 @@
             const isSub = document.getElementById('chk-sub').checked;
             const outputArea = document.getElementById('output');
 
-            // 动态获取当前的下载路径输入值
             let currentPath = document.getElementById('dlPath').value.trim();
-            // 如果用户清空了输入框，给一个默认值防止命令出错
             if (!currentPath) currentPath = '.';
 
             if (!url) {
