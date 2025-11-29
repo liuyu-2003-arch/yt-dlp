@@ -426,13 +426,32 @@
         }
 
         function copyText() {
-            const copyText = document.getElementById("output");
-            if (!copyText.value) return;
+            const output = document.getElementById("output");
+            // 如果没有内容则不执行
+            if (!output.value) return;
 
-            copyText.select();
+            // --- 修改开始：使用临时元素复制，避免视觉上的全选 ---
+            const tempInput = document.createElement("textarea");
+            tempInput.value = output.value;
+            // 将临时元素移出可视区域
+            tempInput.style.position = "absolute";
+            tempInput.style.left = "-9999px";
+            tempInput.style.top = "0";
+            document.body.appendChild(tempInput);
+
+            // 选中并复制临时元素的内容
+            tempInput.select();
             document.execCommand("copy");
 
+            // 移除临时元素
+            document.body.removeChild(tempInput);
+            // --- 修改结束 ---
+
+            // 按钮提示反馈逻辑（保持原有风格，微调防止文字闪烁问题）
             const btn = document.querySelector('.copy-btn');
+            // 防止快速点击时将“已复制”记录为原始文本
+            if (btn.innerText.includes("✓")) return;
+
             const originalText = btn.innerText;
             btn.innerText = "✓ 已复制";
             btn.style.background = "rgba(169, 255, 104, 0.3)";
