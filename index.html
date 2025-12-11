@@ -188,19 +188,14 @@
             gap: 15px;
             align-items: center;
 
-            /* --- 修改开始 --- */
             /* 初始状态：隐藏 */
             height: 0;
             opacity: 0;
             overflow: hidden;
             border: 1px solid transparent;
 
-            /* 关键修改：设置 marginTop 为 0，marginBottom 为 -24px */
-            /* -24px 是为了抵消父容器 container 的 gap: 24px 产生的多余间距 */
             margin-top: 0;
             margin-bottom: -24px;
-
-            /* --- 修改结束 --- */
 
             transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             transform: translateY(-10px);
@@ -209,14 +204,8 @@
         .preview-card.visible {
             opacity: 1;
             height: auto;
-
-            /* --- 修改开始 --- */
-            /* 显示状态：恢复正常的间距 */
-            /* 这里设置上下各 5px，加上父容器原本的 gap，视觉效果会很舒服 */
             margin-top: 5px;
             margin-bottom: 5px;
-            /* --- 修改结束 --- */
-
             padding: 12px;
             border-color: rgba(255, 255, 255, 0.5);
             transform: translateY(0);
@@ -255,6 +244,7 @@
             display: flex;
             gap: 15px;
             justify-content: center;
+            flex-wrap: wrap; /* 允许换行以适应小屏幕 */
         }
 
         .checkbox-label {
@@ -293,9 +283,9 @@
             font-weight: bold;
         }
 
-        /* 路径信息 (修改：无图标、无虚线、文字在右、字号统一) */
+        /* 路径信息 */
         .path-info {
-            font-size: 14px; /* 调整为 14px，与选项一致 */
+            font-size: 14px;
             color: #777;
             text-align: left;
             display: flex;
@@ -311,26 +301,21 @@
         .path-label {
             color: #666;
             font-weight: 500;
-            white-space: nowrap; /* 防止文字换行 */
+            white-space: nowrap;
         }
 
         .path-input {
-            /* 移除等宽字体，使用继承字体，使风格统一 */
             font-family: inherit;
             background: transparent;
-            border: none; /* 去掉虚线边框 */
+            border: none;
             color: #444;
             padding: 4px 0;
-
-            /* 自动填充剩余空间 */
             flex: 1;
             width: auto;
-
-            font-size: 14px; /* 字号统一 */
+            font-size: 14px;
             outline: none;
         }
 
-        /* 输入框获得焦点时的微弱提示，防止完全找不到输入位置 */
         .path-input:focus {
             color: #222;
         }
@@ -442,11 +427,14 @@
                 <input type="checkbox" id="chk-sub" onchange="generate()">
                 <span>📝 字幕 (SRT)</span>
             </label>
+            <label class="checkbox-label" id="lbl-cover" onclick="toggleCheck('cover')">
+                <input type="checkbox" id="chk-cover" onchange="generate()">
+                <span>🖼️ 封面 (JPG)</span>
+            </label>
         </div>
 
         <div class="path-info">
             <input type="text" id="dlPath" class="path-input" value="~/Movies/YouTube DL/" oninput="generate()">
-
             <span class="path-label">下载路径</span>
         </div>
 
@@ -467,6 +455,7 @@
             toggleCheck('video', true);
             toggleCheck('audio', true);
             toggleCheck('sub', true);
+            // 封面默认不选中，所以这里不需要 toggleCheck('cover')
         };
 
         urlInput.addEventListener('input', (e) => {
@@ -552,6 +541,7 @@
             const isVideo = document.getElementById('chk-video').checked;
             const isAudio = document.getElementById('chk-audio').checked;
             const isSub = document.getElementById('chk-sub').checked;
+            const isCover = document.getElementById('chk-cover').checked; // 获取封面选项
             const outputArea = document.getElementById('output');
 
             let currentPath = document.getElementById('dlPath').value.trim();
@@ -566,15 +556,22 @@
             const baseCmd = `yt-dlp "${url}" -P "${currentPath}"`;
 
             if (isVideo) {
-                commands.push(`${baseCmd} --format "bv+ba/b" --embed-subs --sub-langs "en.*,zh.*" --merge-output-format mkv`);
+                // 添加 --embed-thumbnail 将封面嵌入视频
+                commands.push(`${baseCmd} --format "bv+ba/b" --embed-subs --sub-langs "en.*,zh.*" --merge-output-format mkv --embed-thumbnail`);
             }
 
             if (isAudio) {
-                commands.push(`${baseCmd} -x --audio-format mp3`);
+                // 添加 --embed-thumbnail 将封面嵌入音频
+                commands.push(`${baseCmd} -x --audio-format mp3 --embed-thumbnail`);
             }
 
             if (isSub) {
                 commands.push(`${baseCmd} --write-sub --sub-langs "en.*,zh.*" --convert-subs srt --skip-download`);
+            }
+
+            if (isCover) {
+                // 单独下载封面并转换为 jpg
+                commands.push(`${baseCmd} --write-thumbnail --skip-download --convert-thumbnails jpg`);
             }
 
             if (commands.length > 0) {
