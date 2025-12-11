@@ -244,7 +244,7 @@
             display: flex;
             gap: 15px;
             justify-content: center;
-            flex-wrap: wrap; /* 允许换行以适应小屏幕 */
+            flex-wrap: wrap; /* 允许换行 */
         }
 
         .checkbox-label {
@@ -417,19 +417,19 @@
         <div class="options">
             <label class="checkbox-label" id="lbl-video" onclick="toggleCheck('video')">
                 <input type="checkbox" id="chk-video" checked onchange="generate()">
-                <span>🎬 视频 (MKV)</span>
+                <span>🎬 视频</span>
             </label>
             <label class="checkbox-label" id="lbl-audio" onclick="toggleCheck('audio')">
                 <input type="checkbox" id="chk-audio" onchange="generate()">
-                <span>🎵 音频 (MP3)</span>
+                <span>🎵 音频</span>
             </label>
             <label class="checkbox-label" id="lbl-sub" onclick="toggleCheck('sub')">
                 <input type="checkbox" id="chk-sub" onchange="generate()">
-                <span>📝 字幕 (SRT)</span>
+                <span>📝 字幕</span>
             </label>
             <label class="checkbox-label" id="lbl-cover" onclick="toggleCheck('cover')">
                 <input type="checkbox" id="chk-cover" onchange="generate()">
-                <span>🖼️ 封面 (JPG)</span>
+                <span>🖼️ 封面</span>
             </label>
         </div>
 
@@ -455,7 +455,6 @@
             toggleCheck('video', true);
             toggleCheck('audio', true);
             toggleCheck('sub', true);
-            // 封面默认不选中，所以这里不需要 toggleCheck('cover')
         };
 
         urlInput.addEventListener('input', (e) => {
@@ -541,7 +540,7 @@
             const isVideo = document.getElementById('chk-video').checked;
             const isAudio = document.getElementById('chk-audio').checked;
             const isSub = document.getElementById('chk-sub').checked;
-            const isCover = document.getElementById('chk-cover').checked; // 获取封面选项
+            const isCover = document.getElementById('chk-cover').checked;
             const outputArea = document.getElementById('output');
 
             let currentPath = document.getElementById('dlPath').value.trim();
@@ -556,12 +555,10 @@
             const baseCmd = `yt-dlp "${url}" -P "${currentPath}"`;
 
             if (isVideo) {
-                // 添加 --embed-thumbnail 将封面嵌入视频
                 commands.push(`${baseCmd} --format "bv+ba/b" --embed-subs --sub-langs "en.*,zh.*" --merge-output-format mkv --embed-thumbnail`);
             }
 
             if (isAudio) {
-                // 添加 --embed-thumbnail 将封面嵌入音频
                 commands.push(`${baseCmd} -x --audio-format mp3 --embed-thumbnail`);
             }
 
@@ -570,7 +567,6 @@
             }
 
             if (isCover) {
-                // 单独下载封面并转换为 jpg
                 commands.push(`${baseCmd} --write-thumbnail --skip-download --convert-thumbnails jpg`);
             }
 
