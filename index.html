@@ -552,7 +552,8 @@
             }
 
             let commands = [];
-            const baseCmd = `yt-dlp "${url}" -P "${currentPath}"`;
+            // 修改后的代码：添加了 -o "%(title)s.%(ext)s" 以去除文件名中的 ID
+            const baseCmd = `yt-dlp "${url}" -P "${currentPath}" -o "%(title)s.%(ext)s"`;
 
             if (isVideo) {
                 commands.push(`${baseCmd} --format "bv+ba/b" --embed-subs --sub-langs "en.*,zh.*" --merge-output-format mkv --embed-thumbnail`);
