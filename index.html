@@ -15,8 +15,8 @@
             --glass-bg: rgba(255, 255, 255, 0.45);
             --glass-border: rgba(255, 255, 255, 0.6);
             --text-main: #333;
-            --accent: #9b59b6;
-            --accent-hover: #8e44ad;
+            /* 选中时的渐变色 */
+            --active-gradient: linear-gradient(135deg, #c471ed 0%, #f64f59 100%);
         }
 
         * {
@@ -169,7 +169,7 @@
         }
 
         .badge {
-            background: linear-gradient(135deg, #c471ed 0%, #f64f59 100%);
+            background: var(--active-gradient);
             color: white;
             padding: 6px 14px;
             border-radius: 10px;
@@ -239,20 +239,21 @@
             color: #666;
         }
 
-        /* 选项 */
+        /* 选项区域 */
         .options {
             display: flex;
-            gap: 15px;
+            gap: 12px; /* 稍微缩小间距以适应单行 */
             justify-content: center;
-            flex-wrap: wrap; /* 允许换行 */
+            flex-wrap: nowrap; /* 强制不换行 */
+            white-space: nowrap;
         }
 
         .checkbox-label {
             cursor: pointer;
-            padding: 12px 20px;
+            padding: 12px 18px;
             background: rgba(255,255,255,0.5);
             border-radius: 14px;
-            transition: all 0.2s ease;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
             user-select: none;
             display: flex;
             align-items: center;
@@ -271,16 +272,19 @@
             display: none;
         }
 
+        /* 选中状态：明显颜色变化，无对勾 */
         .checkbox-label.checked {
-            background: #fff;
-            color: var(--accent);
-            border-color: rgba(155, 89, 182, 0.3);
-            box-shadow: 0 4px 15px rgba(155, 89, 182, 0.15);
+            background: var(--active-gradient);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 6px 20px rgba(196, 113, 237, 0.35);
+            transform: translateY(-2px);
         }
-
-        .checkbox-label.checked span::before {
-            content: "✓ ";
-            font-weight: bold;
+        
+        /* 选中悬停时保持上浮 */
+        .checkbox-label.checked:hover {
+            transform: translateY(-2px);
+            opacity: 0.95;
         }
 
         /* 路径信息 */
@@ -415,20 +419,24 @@
         </div>
 
         <div class="options">
-            <label class="checkbox-label" id="lbl-video" onclick="toggleCheck('video')">
-                <input type="checkbox" id="chk-video" checked onchange="generate()">
+            <label class="checkbox-label" id="lbl-video" onclick="selectMode('video')">
+                <input type="radio" name="mode" value="video" checked onchange="generate()">
                 <span>🎬 视频</span>
             </label>
-            <label class="checkbox-label" id="lbl-audio" onclick="toggleCheck('audio')">
-                <input type="checkbox" id="chk-audio" onchange="generate()">
+            <label class="checkbox-label" id="lbl-audio" onclick="selectMode('audio')">
+                <input type="radio" name="mode" value="audio" onchange="generate()">
                 <span>🎵 音频</span>
             </label>
-            <label class="checkbox-label" id="lbl-sub" onclick="toggleCheck('sub')">
-                <input type="checkbox" id="chk-sub" onchange="generate()">
+            <label class="checkbox-label" id="lbl-sub" onclick="selectMode('sub')">
+                <input type="radio" name="mode" value="sub" onchange="generate()">
                 <span>📝 字幕</span>
             </label>
-            <label class="checkbox-label" id="lbl-cover" onclick="toggleCheck('cover')">
-                <input type="checkbox" id="chk-cover" onchange="generate()">
+            <label class="checkbox-label" id="lbl-whisper" onclick="selectMode('whisper')">
+                <input type="radio" name="mode" value="whisper" onchange="generate()">
+                <span>🤖 转字幕</span>
+            </label>
+            <label class="checkbox-label" id="lbl-cover" onclick="selectMode('cover')">
+                <input type="radio" name="mode" value="cover" onchange="generate()">
                 <span>🖼️ 封面</span>
             </label>
         </div>
@@ -451,10 +459,9 @@
         const resultArea = document.getElementById('resultArea');
         let debounceTimer;
 
+        // 初始化：默认选中 video
         window.onload = function() {
-            toggleCheck('video', true);
-            toggleCheck('audio', true);
-            toggleCheck('sub', true);
+            selectMode('video');
         };
 
         urlInput.addEventListener('input', (e) => {
@@ -462,6 +469,22 @@
         });
 
         function handleInput(val) {
+            // ✨✨✨ 新增：自动清洗 Bilibili 分享文本 ✨✨✨
+            // 如果输入包含 bilibili 视频链接，使用正则提取干净的 URL (去除标题和跟踪参数)
+            if (val && val.includes('bilibili.com/video/')) {
+                // 正则匹配: https://www.bilibili.com/video/BVxxx/ (支持带或不带最后的斜杠)
+                const match = val.match(/(https?:\/\/(?:www\.)?bilibili\.com\/video\/[A-Za-z0-9]+\/?)/);
+                if (match) {
+                    const cleanUrl = match[1];
+                    // 如果原文本不等于清洗后的 URL（说明包含杂质），则替换
+                    if (val !== cleanUrl) {
+                        val = cleanUrl;
+                        urlInput.value = val; // 更新界面
+                    }
+                }
+            }
+            // ✨✨✨ 清洗逻辑结束 ✨✨✨
+
             if (val.trim().length > 0) {
                 wrapper.classList.add('has-content');
 
@@ -522,26 +545,30 @@
             }, 400);
         }
 
-        function toggleCheck(type, onlyVisual = false) {
-            const chk = document.getElementById('chk-' + type);
-            const lbl = document.getElementById('lbl-' + type);
+        // 处理单选逻辑和视觉样式
+        function selectMode(mode) {
+            // 1. 更新视觉样式
+            document.querySelectorAll('.checkbox-label').forEach(el => el.classList.remove('checked'));
+            const activeLabel = document.getElementById('lbl-' + mode);
+            if (activeLabel) {
+                activeLabel.classList.add('checked');
+            }
 
-            setTimeout(() => {
-                if (chk.checked) {
-                    lbl.classList.add('checked');
-                } else {
-                    lbl.classList.remove('checked');
-                }
-            }, 0);
+            // 2. 确保 Radio Input 被选中
+            const radio = document.querySelector(`input[value="${mode}"]`);
+            if (radio) {
+                radio.checked = true;
+                generate(); // 触发生成
+            }
         }
 
         function generate() {
             const url = urlInput.value.trim();
-            const isVideo = document.getElementById('chk-video').checked;
-            const isAudio = document.getElementById('chk-audio').checked;
-            const isSub = document.getElementById('chk-sub').checked;
-            const isCover = document.getElementById('chk-cover').checked;
             const outputArea = document.getElementById('output');
+            
+            // 获取当前选中的模式
+            const modeInput = document.querySelector('input[name="mode"]:checked');
+            const mode = modeInput ? modeInput.value : 'video';
 
             let currentPath = document.getElementById('dlPath').value.trim();
             if (!currentPath) currentPath = '.';
@@ -551,28 +578,38 @@
                 return;
             }
 
-            let commands = [];
-            // 修改后的代码：添加了 -o "%(title)s.%(ext)s" 以去除文件名中的 ID
+            let command = "";
+            // 基础结构
             const baseCmd = `yt-dlp "${url}" -P "${currentPath}" -o "%(title)s.%(ext)s"`;
+            // Whisper 命令部分
+            const whisperExec = ' --exec "whisper {} --model medium --output_format srt"';
 
-            if (isVideo) {
-                commands.push(`${baseCmd} --format "bv+ba/b" --embed-subs --sub-langs "en.*,zh.*" --merge-output-format mkv --embed-thumbnail`);
+            switch (mode) {
+                case 'video':
+                    // 标准视频下载
+                    command = `${baseCmd} --format "bv+ba/b" --embed-subs --sub-langs "en.*,zh.*" --merge-output-format mkv --embed-thumbnail`;
+                    break;
+                case 'audio':
+                    // 仅音频
+                    command = `${baseCmd} -x --audio-format mp3 --embed-thumbnail`;
+                    break;
+                case 'sub':
+                    // 仅字幕
+                    command = `${baseCmd} --write-sub --sub-langs "en.*,zh.*" --convert-subs srt --skip-download`;
+                    break;
+                case 'whisper':
+                    // 视频 + Whisper 生成字幕 
+                    // 关键修复：去掉了 --embed-subs，防止 Bilibili 的 XML 弹幕导致合并失败
+                    command = `${baseCmd} --format "bv+ba/b" --merge-output-format mkv --embed-thumbnail${whisperExec}`;
+                    break;
+                case 'cover':
+                    // 仅封面
+                    command = `${baseCmd} --write-thumbnail --skip-download --convert-thumbnails jpg`;
+                    break;
             }
 
-            if (isAudio) {
-                commands.push(`${baseCmd} -x --audio-format mp3 --embed-thumbnail`);
-            }
-
-            if (isSub) {
-                commands.push(`${baseCmd} --write-sub --sub-langs "en.*,zh.*" --convert-subs srt --skip-download`);
-            }
-
-            if (isCover) {
-                commands.push(`${baseCmd} --write-thumbnail --skip-download --convert-thumbnails jpg`);
-            }
-
-            if (commands.length > 0) {
-                outputArea.value = commands.join(' && ');
+            if (command) {
+                outputArea.value = command;
                 resultArea.classList.add('visible');
             } else {
                 resultArea.classList.remove('visible');
