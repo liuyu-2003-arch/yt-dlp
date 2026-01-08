@@ -557,9 +557,14 @@
             let command = "";
             const baseCmd = `yt-dlp "${url}" -P "${currentPath}" -o "%(title)s.%(ext)s"`;
             
-            // ✨✨✨ 关键修复 ✨✨✨
-            // 添加了 --output_dir 参数，将字幕强制保存到用户在网页上指定的下载路径中
-            const whisperExec = ` --exec "whisper {} --model medium --output_format srt --output_dir '${currentPath}'"`;
+            // 修复: 处理路径中的 ~ 符号，并使用双引号包裹以确保 shell 展开
+            let execPath = currentPath;
+            if (execPath.startsWith('~/')) {
+                execPath = '$HOME' + execPath.substring(1); 
+            }
+
+            // 使用转义双引号 \" 包裹路径，解决路径中有空格和 ~ 展开的问题
+            const whisperExec = ` --exec "whisper {} --model medium --output_format srt --output_dir \\"${execPath}\\""`;
 
             switch (mode) {
                 case 'video':
