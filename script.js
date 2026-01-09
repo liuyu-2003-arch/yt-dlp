@@ -12,6 +12,27 @@ urlInput.addEventListener('input', (e) => {
     handleInput(e.target.value);
 });
 
+// 新增：点击输入框时，如果有内容，则请求权限（这里模拟为询问是否清空）
+urlInput.addEventListener('click', async () => {
+    if (urlInput.value.trim().length > 0) {
+        // 使用 Clipboard API 读取剪贴板内容
+        try {
+            const text = await navigator.clipboard.readText();
+            if (text && text !== urlInput.value) {
+                // 如果剪贴板有内容且与当前输入框内容不同，直接替换
+                urlInput.value = text;
+                handleInput(text);
+            } else {
+                // 如果剪贴板内容相同或无法读取，则全选文本方便删除
+                urlInput.select();
+            }
+        } catch (err) {
+            // 如果没有权限读取剪贴板，则全选文本
+            urlInput.select();
+        }
+    }
+});
+
 function handleInput(val) {
     // 自动清洗 Bilibili 分享链接
     if (val && val.includes('bilibili.com/video/')) {
