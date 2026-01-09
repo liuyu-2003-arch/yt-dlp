@@ -230,6 +230,48 @@
             color: #666;
         }
 
+        /* --- 新增样式: 信息徽章 --- */
+        .info-badges {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .info-badge {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            line-height: 1;
+        }
+
+        .badge-res {
+            background: rgba(0, 0, 0, 0.06);
+            color: #555;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .badge-res.is-4k {
+            background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
+            color: #8a6d0b;
+            border: none;
+            box-shadow: 0 2px 5px rgba(253, 185, 49, 0.3);
+        }
+
+        .badge-sub {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid rgba(25, 118, 210, 0.1);
+        }
+        .badge-sub.missing {
+            background: #f5f5f5;
+            color: #bbb;
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        /* ----------------------- */
+
         .options {
             display: flex;
             gap: 12px;
@@ -401,6 +443,7 @@
             <div class="preview-info">
                 <div class="preview-title" id="previewTitle">加载中...</div>
                 <div class="preview-author" id="previewAuthor"></div>
+                <div class="info-badges" id="infoBadges"></div>
             </div>
         </div>
 
@@ -513,6 +556,38 @@
             document.getElementById('previewTitle').textContent = data.title;
             document.getElementById('previewAuthor').textContent = data.author_name;
             document.getElementById('previewThumb').src = data.thumbnail_url;
+
+            // --- 新增：渲染徽章 ---
+            const badgesContainer = document.getElementById('infoBadges');
+            badgesContainer.innerHTML = ''; // 清空旧徽章
+
+            // 1. 分辨率徽章 (仅当有数据时显示)
+            if (data.max_res) {
+                const resBadge = document.createElement('span');
+                resBadge.className = 'info-badge badge-res';
+                resBadge.textContent = data.max_res;
+                if (data.max_res === '4K') resBadge.classList.add('is-4k');
+                badgesContainer.appendChild(resBadge);
+            }
+
+            // 2. 字幕徽章 (仅当有数据时显示)
+            if (data.has_zh_sub !== null) { // 检查是否为 null (YouTube 为 null)
+                // 中文字幕
+                const zhBadge = document.createElement('span');
+                zhBadge.className = data.has_zh_sub ? 'info-badge badge-sub' : 'info-badge badge-sub missing';
+                zhBadge.textContent = '中字';
+                badgesContainer.appendChild(zhBadge);
+
+                // 英文字幕 (可选)
+                if (data.has_en_sub) {
+                    const enBadge = document.createElement('span');
+                    enBadge.className = 'info-badge badge-sub';
+                    enBadge.textContent = 'EN';
+                    badgesContainer.appendChild(enBadge);
+                }
+            } 
+            // --- 结束 ---
+
             card.classList.add('visible');
         }
 
