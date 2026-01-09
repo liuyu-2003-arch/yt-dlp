@@ -6,35 +6,60 @@ export default async function handler(request, response) {
     return response.status(400).json({ error: 'Missing URL parameter' });
   }
 
-  // 设置通用的缓存头
   response.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate');
 
   try {
     // === 1. Bilibili 处理逻辑 ===
-    // 匹配 B 站 BV 号 (如 BV1xx411c7Xh)
     const biliMatch = url.match(/bilibili\.com\/video\/(BV[a-zA-Z0-9]+)/);
     if (biliMatch) {
       const bvid = biliMatch[1];
-      // 调用 Bilibili 官方 API
       const bApiUrl = `https://api.bilibili.com/x/web-interface/view?bvid=${bvid}`;
       const bRes = await fetch(bApiUrl);
       const bJson = await bRes.json();
 
       if (bJson.code === 0) {
         const data = bJson.data;
+
+        // --- 解析分辨率 ---
+        let resolution = '1080P';
+        // B站 dimension 字段包含 width/height
+        if (data.dimension) {
+            const { width, height } = data.dimension;
+            if (width >= 3840 || height >= 2160) resolution = '4K';
+            else if (width >= 2560 || height >= 1440) resolution = '2K';
+            else if (width >= 1920 || height >= 1080) resolution = '1080P';
+            else resolution = '720P';
+        }
+
+        // --- 解析字幕 ---
+        let has_zh = false;
+        let has_en = false;
+        if (data.subtitle && data.subtitle.list) {
+            // 遍历字幕列表检查语言
+            data.subtitle.list.forEach(sub => {
+                const lan = sub.lan; // 语言代码
+                const doc = sub.lan_doc; // 显示名称
+                if (lan.includes('zh') || doc.includes('中')) has_zh = true;
+                if (lan.includes('en') || doc.includes('英')) has_en = true;
+            });
+        }
+
         return response.status(200).json({
           title: data.title,
           author_name: data.owner.name,
-          thumbnail_url: data.pic, // B站封面通常是 http，部分浏览器可能会因为混内容警告而需要处理，但通常现代浏览器会自动升级或允许
-          provider: 'bilibili'
+          thumbnail_url: data.pic,
+          provider: 'bilibili',
+          // 新增字段
+          max_res: resolution,
+          has_zh_sub: has_zh,
+          has_en_sub: has_en
         });
       } else {
         throw new Error('Bilibili video not found');
       }
     }
 
-    // === 2. YouTube 处理逻辑 (原有的 oEmbed) ===
-    // 如果不是 B 站，尝试按 YouTube 处理
+    // === 2. YouTube 处理逻辑 ===
     const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
     const ytResponse = await fetch(oembedUrl);
 
@@ -44,7 +69,11 @@ export default async function handler(request, response) {
         title: data.title,
         author_name: data.author_name,
         thumbnail_url: data.thumbnail_url,
-        provider: 'youtube'
+        provider: 'youtube',
+        // YouTube oEmbed 无法获取这些信息，设为 null
+        max_res: null, 
+        has_zh_sub: null,
+        has_en_sub: null
       });
     }
 
