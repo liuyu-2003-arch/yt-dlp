@@ -175,14 +175,13 @@
             letter-spacing: 0.5px;
         }
 
-        /* === 预览卡片布局优化 === */
+        /* === 预览卡片布局 === */
         .preview-card {
             background: rgba(255, 255, 255, 0.4);
             border-radius: 16px;
             padding: 0;
             display: flex;
             align-items: center;
-            justify-content: space-between; /* 左右分布 */
             height: 0;
             opacity: 0;
             overflow: hidden;
@@ -213,23 +212,33 @@
             margin-right: 15px;
         }
 
-        .preview-text-container {
+        /* 信息容器 */
+        .preview-info {
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             overflow: hidden;
-            margin-right: 10px;
+            height: 68px; /* 撑满高度以垂直居中 */
+            gap: 4px;
         }
 
         .preview-title {
-            font-size: 18px;
+            font-size: 14px;
             font-weight: 600;
             color: #333;
-            margin-bottom: 4px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        /* 下方行：作者 + 标签 */
+        .preview-bottom-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
         }
 
         .preview-author {
@@ -238,31 +247,27 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            margin-right: 10px;
+            flex: 1; /* 让作者名占据左侧剩余空间 */
         }
 
-        /* === 右侧标签组样式 === */
+        /* === 标签组样式 (水平堆叠) === */
         .info-badges {
             display: flex;
-            flex-direction: column; /* 垂直排列 */
-            gap: 6px;
-            align-items: flex-end; /* 靠右对齐 */
-            flex-shrink: 0;
-        }
-
-        .badge-row {
-            display: flex;
-            gap: 4px;
+            flex-direction: row; /* ✨ 改为水平排列 */
+            gap: 5px;
+            align-items: center;
+            flex-shrink: 0; /* 防止标签压缩 */
         }
 
         .info-badge {
             font-size: 10px;
             padding: 2px 6px;
-            border-radius: 5px;
+            border-radius: 4px;
             font-weight: 600;
             display: inline-flex;
             align-items: center;
-            line-height: 1.4;
-            height: 20px;
+            line-height: 1.3;
         }
 
         /* 分辨率标签 */
@@ -275,7 +280,7 @@
             background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
             color: #8a6d0b;
             border: none;
-            box-shadow: 0 2px 5px rgba(253, 185, 49, 0.3);
+            box-shadow: 0 1px 4px rgba(253, 185, 49, 0.2);
         }
 
         /* 字幕标签 */
@@ -462,12 +467,14 @@
         <div class="preview-card" id="previewCard">
             <img src="" alt="Thumbnail" class="preview-thumb" id="previewThumb">
 
-            <div class="preview-text-container">
+            <div class="preview-info">
                 <div class="preview-title" id="previewTitle">加载中...</div>
-                <div class="preview-author" id="previewAuthor"></div>
-            </div>
 
-            <div class="info-badges" id="infoBadges"></div>
+                <div class="preview-bottom-row">
+                    <div class="preview-author" id="previewAuthor"></div>
+                    <div class="info-badges" id="infoBadges"></div>
+                </div>
+            </div>
         </div>
 
         <div class="options">
@@ -580,11 +587,11 @@
             document.getElementById('previewAuthor').textContent = data.author_name;
             document.getElementById('previewThumb').src = data.thumbnail_url;
 
-            // --- 渲染右侧徽章 ---
+            // --- 渲染徽章逻辑 (全水平排列) ---
             const badgesContainer = document.getElementById('infoBadges');
             badgesContainer.innerHTML = ''; // 清空
 
-            // 1. 第一排：分辨率 (如果有)
+            // 1. 分辨率
             if (data.max_res) {
                 const resBadge = document.createElement('span');
                 resBadge.className = 'info-badge badge-res';
@@ -593,37 +600,33 @@
                 badgesContainer.appendChild(resBadge);
             }
 
-            // 2. 第二排：字幕信息
+            // 2. 字幕信息
             if (data.has_zh_sub !== null && data.has_zh_sub !== undefined) {
-                const subRow = document.createElement('div');
-                subRow.className = 'badge-row';
-
                 const hasZh = data.has_zh_sub;
                 const hasEn = data.has_en_sub;
 
                 if (!hasZh && !hasEn) {
-                    // 状态1: 无字幕
+                    // 无字幕
                     const badge = document.createElement('span');
                     badge.className = 'info-badge badge-none';
                     badge.textContent = '无字';
-                    subRow.appendChild(badge);
+                    badgesContainer.appendChild(badge);
                 } else {
-                    // 状态2 & 4: 包含中文
+                    // 中文
                     if (hasZh) {
                         const zhBadge = document.createElement('span');
                         zhBadge.className = 'info-badge badge-sub';
                         zhBadge.textContent = '中字';
-                        subRow.appendChild(zhBadge);
+                        badgesContainer.appendChild(zhBadge);
                     }
-                    // 状态3 & 4: 包含英文
+                    // 英文
                     if (hasEn) {
                         const enBadge = document.createElement('span');
                         enBadge.className = 'info-badge badge-sub';
                         enBadge.textContent = '英字';
-                        subRow.appendChild(enBadge);
+                        badgesContainer.appendChild(enBadge);
                     }
                 }
-                badgesContainer.appendChild(subRow);
             }
             // --- 结束 ---
 
