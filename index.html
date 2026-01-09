@@ -175,13 +175,14 @@
             letter-spacing: 0.5px;
         }
 
+        /* === 预览卡片布局优化 === */
         .preview-card {
             background: rgba(255, 255, 255, 0.4);
             border-radius: 16px;
             padding: 0;
             display: flex;
-            gap: 15px;
             align-items: center;
+            justify-content: space-between; /* 左右分布 */
             height: 0;
             opacity: 0;
             overflow: hidden;
@@ -208,11 +209,17 @@
             border-radius: 10px;
             object-fit: cover;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+            margin-right: 15px;
         }
 
-        .preview-info {
+        .preview-text-container {
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
             overflow: hidden;
+            margin-right: 10px;
         }
 
         .preview-title {
@@ -228,25 +235,37 @@
         .preview-author {
             font-size: 12px;
             color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        /* --- 新增样式: 信息徽章 --- */
+        /* === 右侧标签组样式 === */
         .info-badges {
             display: flex;
+            flex-direction: column; /* 垂直排列 */
             gap: 6px;
-            margin-top: 6px;
+            align-items: flex-end; /* 靠右对齐 */
+            flex-shrink: 0;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 4px;
         }
 
         .info-badge {
             font-size: 10px;
-            padding: 3px 8px;
-            border-radius: 6px;
+            padding: 2px 6px;
+            border-radius: 5px;
             font-weight: 600;
             display: inline-flex;
             align-items: center;
-            line-height: 1;
+            line-height: 1.4;
+            height: 20px;
         }
 
+        /* 分辨率标签 */
         .badge-res {
             background: rgba(0, 0, 0, 0.06);
             color: #555;
@@ -259,16 +278,18 @@
             box-shadow: 0 2px 5px rgba(253, 185, 49, 0.3);
         }
 
+        /* 字幕标签 */
         .badge-sub {
             background: #e3f2fd;
-            color: #1976d2;
-            border: 1px solid rgba(25, 118, 210, 0.1);
+            color: #1565c0;
+            border: 1px solid rgba(21, 101, 192, 0.1);
         }
-        .badge-sub.missing {
-            background: #f5f5f5;
-            color: #bbb;
-            text-decoration: line-through;
-            opacity: 0.6;
+
+        /* 无字幕标签 */
+        .badge-none {
+            background: #f0f0f0;
+            color: #999;
+            border: 1px solid rgba(0,0,0,0.05);
         }
         /* ----------------------- */
 
@@ -311,7 +332,7 @@
             box-shadow: 0 6px 20px rgba(196, 113, 237, 0.35);
             transform: translateY(-2px);
         }
-        
+
         .checkbox-label.checked:hover {
             transform: translateY(-2px);
             opacity: 0.95;
@@ -440,11 +461,13 @@
 
         <div class="preview-card" id="previewCard">
             <img src="" alt="Thumbnail" class="preview-thumb" id="previewThumb">
-            <div class="preview-info">
+
+            <div class="preview-text-container">
                 <div class="preview-title" id="previewTitle">加载中...</div>
                 <div class="preview-author" id="previewAuthor"></div>
-                <div class="info-badges" id="infoBadges"></div>
             </div>
+
+            <div class="info-badges" id="infoBadges"></div>
         </div>
 
         <div class="options">
@@ -557,11 +580,11 @@
             document.getElementById('previewAuthor').textContent = data.author_name;
             document.getElementById('previewThumb').src = data.thumbnail_url;
 
-            // --- 新增：渲染徽章 ---
+            // --- 渲染右侧徽章 ---
             const badgesContainer = document.getElementById('infoBadges');
-            badgesContainer.innerHTML = ''; // 清空旧徽章
+            badgesContainer.innerHTML = ''; // 清空
 
-            // 1. 分辨率徽章 (仅当有数据时显示)
+            // 1. 第一排：分辨率 (如果有)
             if (data.max_res) {
                 const resBadge = document.createElement('span');
                 resBadge.className = 'info-badge badge-res';
@@ -570,22 +593,38 @@
                 badgesContainer.appendChild(resBadge);
             }
 
-            // 2. 字幕徽章 (仅当有数据时显示)
-            if (data.has_zh_sub !== null) { // 检查是否为 null (YouTube 为 null)
-                // 中文字幕
-                const zhBadge = document.createElement('span');
-                zhBadge.className = data.has_zh_sub ? 'info-badge badge-sub' : 'info-badge badge-sub missing';
-                zhBadge.textContent = '中字';
-                badgesContainer.appendChild(zhBadge);
+            // 2. 第二排：字幕信息
+            if (data.has_zh_sub !== null && data.has_zh_sub !== undefined) {
+                const subRow = document.createElement('div');
+                subRow.className = 'badge-row';
 
-                // 英文字幕 (可选)
-                if (data.has_en_sub) {
-                    const enBadge = document.createElement('span');
-                    enBadge.className = 'info-badge badge-sub';
-                    enBadge.textContent = 'EN';
-                    badgesContainer.appendChild(enBadge);
+                const hasZh = data.has_zh_sub;
+                const hasEn = data.has_en_sub;
+
+                if (!hasZh && !hasEn) {
+                    // 状态1: 无字幕
+                    const badge = document.createElement('span');
+                    badge.className = 'info-badge badge-none';
+                    badge.textContent = '无字';
+                    subRow.appendChild(badge);
+                } else {
+                    // 状态2 & 4: 包含中文
+                    if (hasZh) {
+                        const zhBadge = document.createElement('span');
+                        zhBadge.className = 'info-badge badge-sub';
+                        zhBadge.textContent = '中字';
+                        subRow.appendChild(zhBadge);
+                    }
+                    // 状态3 & 4: 包含英文
+                    if (hasEn) {
+                        const enBadge = document.createElement('span');
+                        enBadge.className = 'info-badge badge-sub';
+                        enBadge.textContent = '英字';
+                        subRow.appendChild(enBadge);
+                    }
                 }
-            } 
+                badgesContainer.appendChild(subRow);
+            }
             // --- 结束 ---
 
             card.classList.add('visible');
@@ -611,7 +650,7 @@
             const radio = document.querySelector(`input[value="${mode}"]`);
             if (radio) {
                 radio.checked = true;
-                generate(); 
+                generate();
             }
         }
 
@@ -631,11 +670,11 @@
 
             let command = "";
             const baseCmd = `yt-dlp "${url}" -P "${currentPath}" -o "%(title)s.%(ext)s"`;
-            
+
             // 修复: 处理路径中的 ~ 符号，并使用双引号包裹以确保 shell 展开
             let execPath = currentPath;
             if (execPath.startsWith('~/')) {
-                execPath = '$HOME' + execPath.substring(1); 
+                execPath = '$HOME' + execPath.substring(1);
             }
 
             // 使用转义双引号 \" 包裹路径，解决路径中有空格和 ~ 展开的问题
